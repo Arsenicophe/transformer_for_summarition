@@ -12,4 +12,4 @@ Implémentation  d'un modèle de resume de text
 
 
 <img src="images/decoder_layer.png" alt="Decoder_layer" width="330"/>
-<caption><center><font color='purple'><b>Figure 2b: Transformer Encoder</font></center></caption>
+<caption><center><font color='purple'><b>Figure 2b: Transformer Decoder</font></center></caption>
