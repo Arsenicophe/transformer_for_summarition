@@ -20,3 +20,5 @@ def encodage_positionnel( d_model, positions) :
     pos_encoding = angle_rads[np.newaxis, ...]
     
     return torch.cast(pos_encoding, dtype=torch.float32)
+
+def preprossessing(data) :
