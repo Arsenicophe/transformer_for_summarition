@@ -1,0 +1,1 @@
+def encodage_positionnel( d_model, pos) :
