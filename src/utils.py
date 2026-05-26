@@ -22,4 +22,49 @@ def encodage_positionnel( d_model, positions) :
     return torch.cast(pos_encoding, dtype=torch.float32)
 
 def preprossessing(data) :
+    pass
+
+def train_step(model, batch, optimizer, criterion):
+
+    src = batch["enc_input_ids"]
+    enc_mask = (batch["enc_mask"] == 0)
+
+    tgt = batch["dec_input_ids"]
+    dec_mask = (batch["dec_mask"] == 0)
     
+    tgt_dec = tgt[:, :-1]
+    tgt_cible = tgt[:, 1:]
+
+    dec_mask = dec_mask[:, :-1]
+
+    seq_len = tgt_dec.size(1)
+
+    causal_mask = torch.triu(
+        torch.ones(seq_len, seq_len, device=tgt_dec.device),
+        diagonal=1
+    ).bool()
+
+    model.train()
+
+    optimizer.zero_grad()
+
+    logits = model(
+        src,
+        tgt_dec,
+        enc_mask,
+        dec_mask,
+        causal_mask
+    )
+
+    loss = criterion(
+        logits.reshape(-1, logits.size(-1)),
+        tgt_cible.reshape(-1)
+    )
+
+    loss.backward()
+    optimizer.step()
+
+    return loss.item()
+
+    
+
