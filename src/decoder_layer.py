@@ -2,34 +2,59 @@ from torch import nn
 import torch
 
 
-class Decoder_layer(nn.Module) :
+class DecoderLayer(nn.Module):
 
-    def __init__(self, d_model: int, n_heads: int, dropout: float = 0.1):
+    def __init__(self, d_model, n_heads, dropout=0.1):
         super().__init__()
-        self.mha1       = nn.MultiheadAttention(d_model, n_heads, dropout=dropout)
-        self.mha2       = nn.MultiheadAttention(d_model, n_heads, dropout=dropout)
+
+        self.mha1 = nn.MultiheadAttention(
+            d_model, n_heads,
+            dropout=dropout,
+            batch_first=True
+        )
+
+        self.mha2 = nn.MultiheadAttention(
+            d_model, n_heads,
+            dropout=dropout,
+            batch_first=True
+        )
+
         self.layernorm1 = nn.LayerNorm(d_model)
         self.layernorm2 = nn.LayerNorm(d_model)
         self.layernorm3 = nn.LayerNorm(d_model)
-        self.dropout   = nn.Dropout(dropout)
-        self.ffn = nn.Linear(d_model, d_model)
 
-    def forward(self, qerry, context,mask_padding, causal_mask) :
+        self.dropout = nn.Dropout(dropout)
 
-        out1 = self.mha1(
-            qerry,qerry,qerry,
-            attn_mask=causal_mask)
-        
-        qerry = self.layernorm1(out1 + qerry)
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, 4 * d_model),
+            nn.GELU(),
+            nn.Linear(4 * d_model, d_model)
+        )
 
-        out2 = self.mha2(
-            qerry,context,context, 
-            key_padding_mask=mask_padding)
-        
-        out2 = self.layernorm2(out2 + qerry)
+    def forward(self, query, context, mask_padding=None, causal_mask=None):
+
+        out1, _ = self.mha1(
+            query, query, query,
+            attn_mask=causal_mask
+        )
+
+        query = self.layernorm1(
+            query + self.dropout(out1)
+        )
+
+        out2, _ = self.mha2(
+            query, context, context,
+            key_padding_mask=mask_padding
+        )
+
+        out2 = self.layernorm2(
+            query + self.dropout(out2)
+        )
 
         out_ffn = self.ffn(out2)
 
-        logit = self.layernorm3(out2 + self.dropout(out_ffn))
+        logits = self.layernorm3(
+            out2 + self.dropout(out_ffn)
+        )
 
-        return logit
+        return logits
