@@ -1,6 +1,7 @@
 from transformer import Transformer
 from utils import (
-    train_step, 
+    train_step,
+    eval_step,
     preprossessing, 
     save_checkpoint, 
     load_last_checkpoint
@@ -60,6 +61,20 @@ data_loader = DataLoader(
     persistent_workers=True,
 )
 
+# Test DataLoader
+test_processed = [
+    preprossessing(row) for row in raw_data[cfg["dataset"].get("test_split", "test")]
+]
+test_dataset = Dataset_for_summerisation(tokenizer, test_processed)
+test_loader = DataLoader(
+    test_dataset,
+    batch_size=cfg["data"]["batch_size"],
+    shuffle=False,
+    num_workers=2,
+    pin_memory=True,
+    persistent_workers=True,
+)
+
 #  Modèle 
 model = Transformer(**cfg["model"]).to(device)
 
@@ -110,6 +125,7 @@ n_epochs    = cfg["training"]["n_epochs"]
 clip        = cfg["training"]["clip"]
 accum_steps = cfg["training"]["gradient_accumulation_steps"]
 ckpt_freq   = cfg["training"]["checkpoint_freq"]
+eval_freq   = cfg["training"].get("eval_freq", 1)   # évaluer tous les N epochs
 
 # MLflow 
 mlflow.set_experiment("transformer_summarisation")
@@ -184,6 +200,34 @@ with mlflow.start_run(run_name=f"run_from_epoch_{start_epoch}"):
             },
             step=epoch,
         )
+
+        # ── Évaluation sur le test set ────────────────────────────────────────
+        if (epoch + 1) % eval_freq == 0 or (epoch + 1) == n_epochs:
+            eval_metrics = eval_step(
+                model,
+                test_loader,
+                criterion,
+                tokenizer,
+                device,
+                use_amp,
+                num_samples_rouge=cfg["training"].get("rouge_samples", 256),
+            )
+            tqdm.write(
+                f"  [Epoch {epoch+1}] "
+                f"test_loss={eval_metrics['test_loss']:.4f}  "
+                f"ROUGE-1={eval_metrics['rouge1']:.4f}  "
+                f"ROUGE-2={eval_metrics['rouge2']:.4f}  "
+                f"ROUGE-L={eval_metrics['rougeL']:.4f}"
+            )
+            mlflow.log_metrics(
+                {
+                    "test_loss":  eval_metrics["test_loss"],
+                    "rouge1":     eval_metrics["rouge1"],
+                    "rouge2":     eval_metrics["rouge2"],
+                    "rougeL":     eval_metrics["rougeL"],
+                },
+                step=epoch,
+            )
 
         #Checkpoint
         if (epoch + 1) % ckpt_freq == 0 or (epoch + 1) == n_epochs:

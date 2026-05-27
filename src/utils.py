@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import tqdm
 import os
+import rouge_scorer
 
 def encodage_positionnel( d_model, positions) :
    
@@ -199,8 +200,6 @@ def next_word(
     return predicted_id
 
 
-import torch
-
 
 def summarize(
     model,
@@ -250,3 +249,97 @@ def summarize(
         )
 
     return summary
+
+
+def eval_step(
+    model,
+    data_loader,
+    criterion,
+    tokenizer,
+    device,
+    mixed_precision,
+    num_samples_rouge=256,
+):
+    """
+    Évalue le modèle sur un DataLoader de test.
+ 
+    Retourne un dict avec :
+      - test_loss     : cross-entropy moyenne sur tout le split
+      - rouge1        : F1 ROUGE-1 moyen (precision unigrams)
+      - rouge2        : F1 ROUGE-2 moyen (precision bigrams)
+      - rougeL        : F1 ROUGE-L moyen (LCS)
+    """
+    model.eval()
+    total_loss = 0.0
+ 
+    # Accumulateurs ROUGE
+    r1_scores, r2_scores, rL_scores = [], [], []
+    decoded_count = 0
+ 
+    scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
+ 
+    batch_bar = tqdm(data_loader, desc="  eval", leave=False, unit="batch")
+ 
+    with torch.no_grad():
+        for batch in batch_bar:
+ 
+            # ── Tenseurs ──────────────────────────────────────────────────────
+            src      = batch["enc_input_ids"].to(device)
+            enc_mask = (batch["enc_mask"] == 0).to(device)
+ 
+            tgt      = batch["dec_input_ids"].to(device)
+            dec_mask = (batch["dec_mask"] == 0).to(device)
+ 
+            tgt_dec   = tgt[:, :-1]
+            tgt_cible = tgt[:, 1:]
+            dec_mask  = dec_mask[:, :-1]
+ 
+            seq_len = tgt_dec.size(1)
+            causal_mask = torch.triu(
+                torch.ones(seq_len, seq_len, device=device), diagonal=1
+            ).bool()
+ 
+            # ── Forward (mixed precision) ─────────────────────────────────────
+            with torch.autocast(device_type=device.type, enabled=mixed_precision):
+                logits = model(src, tgt_dec, enc_mask, dec_mask, causal_mask)
+                loss   = criterion(
+                    logits.reshape(-1, logits.size(-1)),
+                    tgt_cible.reshape(-1),
+                )
+ 
+            total_loss += loss.item()
+            batch_bar.set_postfix({"eval_loss": f"{loss.item():.4f}"})
+ 
+            # ── ROUGE sur un sous-ensemble ────────────────────────────────────
+            if decoded_count < num_samples_rouge:
+                pred_ids  = logits.argmax(dim=-1)
+                batch_size = pred_ids.size(0)
+ 
+                for i in range(batch_size):
+                    if decoded_count >= num_samples_rouge:
+                        break
+ 
+                    pred_text = tokenizer.decode(
+                        pred_ids[i].tolist(), skip_special_tokens=True
+                    )
+                    ref_text = tokenizer.decode(
+                        tgt_cible[i].tolist(), skip_special_tokens=True
+                    )
+ 
+                    s = scorer.score(ref_text, pred_text)
+                    r1_scores.append(s["rouge1"].fmeasure)
+                    r2_scores.append(s["rouge2"].fmeasure)
+                    rL_scores.append(s["rougeL"].fmeasure)
+ 
+                    decoded_count += 1
+ 
+    avg_loss = total_loss / len(data_loader)
+ 
+    metrics = {
+        "test_loss": avg_loss,
+        "rouge1":    float(np.mean(r1_scores)),
+        "rouge2":    float(np.mean(r2_scores)),
+        "rougeL":    float(np.mean(rL_scores)),
+    }
+ 
+    return metrics
