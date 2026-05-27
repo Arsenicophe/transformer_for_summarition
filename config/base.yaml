@@ -33,7 +33,7 @@ data:
 training:
   n_epochs: 10
   clip: 1.0
-  checkpoint_dir: "checkpoints"
+  checkpoint_dir: "/content/drive/MyDrive/transformer_summarisation/checkpoints"
   checkpoint_freq: 1         
   device: "cuda"
   mixed_precision: true
