@@ -45,7 +45,10 @@ cfg["model"]["vocab_size"] = tokenizer.vocab_size
 raw_data = load_dataset(cfg["dataset"]["path"], cfg["dataset"]["name"])
 
 
-dataset = Dataset_for_summerisation(tokenizer, raw_data[cfg["dataset"]["split"]])
+test_size  = cfg["dataset"]["test_size"]
+train_size = cfg["dataset"]["train_size"]
+dataset = Dataset_for_summerisation(tokenizer, raw_data[cfg["dataset"]["split"]].select(range()))
+test_dataset = Dataset_for_summerisation(tokenizer, raw_data[cfg["dataset"]["test_split"]].select(range(test_size)))
 
 data_loader = DataLoader(
     dataset,
