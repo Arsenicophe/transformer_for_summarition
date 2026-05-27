@@ -1,6 +1,6 @@
 model:
   embedding_dim: 256
-  vocab_size: 32128          # taille vocab du tokenizer (t5-small / barthez)
+  vocab_size: 50265          # taille vocab du tokenizer (t5-small / barthez)
   n_heads: 8                 # 256 / 8 = 32 dim par head
   n_layer: 4
   max_seq_encoding: 512
