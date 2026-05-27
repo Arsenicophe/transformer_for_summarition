@@ -12,7 +12,7 @@ class Transformer(nn.Module):
         n_heads,
         n_layer,
         max_seq_encoding,
-        dropout
+        dropout,
     ):
         super().__init__()
 
@@ -22,7 +22,7 @@ class Transformer(nn.Module):
             n_layer,
             n_heads,
             max_seq_encoding,
-            dropout
+            dropout,
         )
 
         self.decoder = Decoder(
@@ -31,8 +31,16 @@ class Transformer(nn.Module):
             n_heads,
             n_layer,
             max_seq_encoding,
-            dropout
+            dropout,
         )
+
+        # FIX : sans cette couche la sortie est (batch, seq, d_model)
+        # et non (batch, seq, vocab_size) → CrossEntropyLoss plante
+        self.lm_head = nn.Linear(embedding_dim, vocab_size, bias=False)
+
+        # Weight tying : partage les poids embedding / lm_head
+        # → moins de paramètres, meilleure généralisation
+        self.lm_head.weight = self.decoder.embedding.weight
 
     def forward(
         self,
@@ -40,19 +48,16 @@ class Transformer(nn.Module):
         input_idx,
         enc_mask_padding,
         dec_mask_padding,
-        causal_mask
+        causal_mask,
     ):
+        context = self.encoder(enc_idx, enc_mask_padding)
 
-        context = self.encoder(
-            enc_idx,
-            enc_mask_padding
-        )
-
-        logit = self.decoder(
+        decoded = self.decoder(
             input_idx,
             context,
             dec_mask_padding,
-            causal_mask
+            causal_mask,
         )
 
-        return logit
+        # (batch, seq_len, vocab_size)
+        return self.lm_head(decoded)
