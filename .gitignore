@@ -4,3 +4,4 @@ data/
 *.arrow
 .DS_Store
 
+.env
