@@ -34,8 +34,7 @@ class Transformer(nn.Module):
             dropout,
         )
 
-        # FIX : sans cette couche la sortie est (batch, seq, d_model)
-        # et non (batch, seq, vocab_size) → CrossEntropyLoss plante
+        
         self.lm_head = nn.Linear(embedding_dim, vocab_size, bias=False)
 
         # Weight tying : partage les poids embedding / lm_head
