@@ -2,7 +2,6 @@ from transformer import Transformer
 from utils import (
     train_step,
     eval_step,
-    preprossessing, 
     save_checkpoint, 
     load_last_checkpoint
 )
@@ -46,11 +45,7 @@ cfg["model"]["vocab_size"] = tokenizer.vocab_size
 raw_data = load_dataset(cfg["dataset"]["path"], cfg["dataset"]["name"])
 
 
-data_processed = [
-    preprossessing(row) for row in raw_data[cfg["dataset"]["split"]]
-]
-
-dataset = Dataset_for_summerisation(tokenizer, data_processed)
+dataset = Dataset_for_summerisation(tokenizer, raw_data[cfg["dataset"]["split"]])
 
 data_loader = DataLoader(
     dataset,
@@ -62,10 +57,8 @@ data_loader = DataLoader(
 )
 
 # Test DataLoader
-test_processed = [
-    preprossessing(row) for row in raw_data[cfg["dataset"].get("test_split", "test")]
-]
-test_dataset = Dataset_for_summerisation(tokenizer, test_processed)
+
+test_dataset = Dataset_for_summerisation(tokenizer, raw_data[cfg["dataset"]["test_split"]])
 test_loader = DataLoader(
     test_dataset,
     batch_size=cfg["data"]["batch_size"],

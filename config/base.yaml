@@ -13,6 +13,7 @@ dataset:
   path: "mlsum"
   name: "fr"
   split: "train"
+  test_split : "test"
 
 optimizer:
   lr: 1.0e-4
