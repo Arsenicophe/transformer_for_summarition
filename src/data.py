@@ -26,7 +26,7 @@ class Dataset_for_summerisation(Dataset):
 
             truncation=True,
 
-            max_length=32,
+            max_length=512,
 
             return_tensors="pt"
 
@@ -40,7 +40,7 @@ class Dataset_for_summerisation(Dataset):
 
             truncation=True,
 
-            max_length=32,
+            max_length=128,
 
             return_tensors="pt"
 

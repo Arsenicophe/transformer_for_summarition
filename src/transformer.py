@@ -54,7 +54,7 @@ class Transformer(nn.Module):
         decoded = self.decoder(
             input_idx,
             context,
-            dec_mask_padding,
+            enc_mask_padding,
             causal_mask,
         )
 

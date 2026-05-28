@@ -124,6 +124,7 @@ ckpt_freq   = cfg["training"]["checkpoint_freq"]
 eval_freq   = cfg["training"].get("eval_freq", 1)   # évaluer tous les N epochs
 
 # MLflow 
+mlflow.set_tracking_uri("https://dagshub.com/Arsenicophe/transformer_for_summarition.mlflow")
 mlflow.set_experiment("transformer_summarisation")
 
 with mlflow.start_run(run_name=f"run_from_epoch_{start_epoch}"):

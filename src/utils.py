@@ -1,8 +1,8 @@
 import numpy as np
 import torch
-import tqdm
+from tqdm import tqdm 
 import os
-import rouge_scorer
+from rouge_score import rouge_scorer
 
 def encodage_positionnel( d_model, positions) :
    

@@ -3,5 +3,4 @@ data/
 *.pt
 *.arrow
 .DS_Store
-
-.env
+notebook/colab.ipynb
