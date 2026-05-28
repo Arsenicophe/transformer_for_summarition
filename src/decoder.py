@@ -1,4 +1,4 @@
-from decoder_layer import Decoder_layer
+from decoder_layer import DecoderLayer
 import torch.nn as nn
 from utils import encodage_positionnel
 
@@ -23,7 +23,7 @@ class Decoder(nn.Module):
 
         self.layers = nn.ModuleList(
             [
-                Decoder_layer(
+                DecoderLayer(
                     embedding_dim,
                     n_heads,
                     dropout

@@ -1,41 +1,46 @@
 model:
   embedding_dim: 256
-  vocab_size: 50265          
-  n_heads: 8                 
+  vocab_size: 50265          # écrasé dynamiquement par tokenizer.vocab_size dans train.py
+  n_heads: 8                 # embedding_dim / n_heads = 32 dim par head
   n_layer: 4
   max_seq_encoding: 512
   dropout: 0.1
 
 tokenizer:
-  pretrained_model_name: "moussaKam/barthez"   # BERT-like français
+  pretrained_model_name: "moussaKam/barthez"
 
 dataset:
   path: "reciTAL/mlsum"
   name: "fr"
   split: "train"
-  test_split : "test"
-  test_size : 1_000
-  train_size : 100_000
+  test_split: "test"
+  train_size: 390000
+  test_size: 2000
 
 optimizer:
   lr: 1.0e-4
   weight_decay: 0.01
 
-scheduler:
-  warmup_steps: 200
-  total_steps: 5000
+# total_steps N'EST PLUS ICI — calculé dynamiquement dans train.py
+# total_steps = n_epochs × ceil(train_size / batch_size / accum_steps)
+# warmup      = 10% de total_steps
 
 data:
-  batch_size: 32             
+  batch_size: 8              # T4 15GB avec seq_len=512 — ne pas dépasser 8
   max_src_len: 512
   max_tgt_len: 128
 
 training:
-  n_epochs: 10
+  n_epochs: 40
   clip: 1.0
   checkpoint_dir: "/content/drive/MyDrive/transformer_for_summarisation/checkpoints"
-  checkpoint_freq: 1         
+  checkpoint_freq: 1
+  eval_freq: 2
+  rouge_samples: 64          # nombre d'exemples pour ROUGE pendant eval (plus = plus lent)
   device: "cuda"
   mixed_precision: true
-  gradient_accumulation_steps: 4   # batch effectif = 8 × 4 = 32
-  eval_freq : 2
+  gradient_accumulation_steps: 4    # batch effectif = 8 × 4 = 32
+
+mlflow:
+  tracking_uri: "https://dagshub.com/Arsenicophe/transformer_for_summarition.mlflow"
+  experiment_name: "transformer_summarisation"

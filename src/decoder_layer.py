@@ -1,5 +1,4 @@
 from torch import nn
-import torch
 
 
 class DecoderLayer(nn.Module):
@@ -10,13 +9,13 @@ class DecoderLayer(nn.Module):
         self.mha1 = nn.MultiheadAttention(
             d_model, n_heads,
             dropout=dropout,
-            batch_first=True
+            batch_first=True,
         )
 
         self.mha2 = nn.MultiheadAttention(
             d_model, n_heads,
             dropout=dropout,
-            batch_first=True
+            batch_first=True,
         )
 
         self.layernorm1 = nn.LayerNorm(d_model)
@@ -28,33 +27,30 @@ class DecoderLayer(nn.Module):
         self.ffn = nn.Sequential(
             nn.Linear(d_model, 4 * d_model),
             nn.GELU(),
-            nn.Linear(4 * d_model, d_model)
+            nn.Linear(4 * d_model, d_model),
         )
 
     def forward(self, query, context, mask_padding=None, causal_mask=None):
 
+        # ── 1. Self-attention masquée (Pre-LN) ───────────────────────────────
+        normed = self.layernorm1(query)
         out1, _ = self.mha1(
-            query, query, query,
-            attn_mask=causal_mask
+            normed, normed, normed,
+            attn_mask=causal_mask,
         )
+        query = query + self.dropout(out1)
 
-        query = self.layernorm1(
-            query + self.dropout(out1)
-        )
-
+        # ── 2. Cross-attention encodeur-décodeur (Pre-LN) ────────────────────
+        normed = self.layernorm2(query)
         out2, _ = self.mha2(
-            query, context, context,
-            key_padding_mask=mask_padding
+            normed, context, context,
+            key_padding_mask=mask_padding,
         )
+        query = query + self.dropout(out2)
 
-        out2 = self.layernorm2(
-            query + self.dropout(out2)
-        )
+        # ── 3. Feed-forward (Pre-LN) ──────────────────────────────────────────
+        normed  = self.layernorm3(query)
+        out_ffn = self.ffn(normed)
+        output  = query + self.dropout(out_ffn)
 
-        out_ffn = self.ffn(out2)
-
-        logits = self.layernorm3(
-            out2 + self.dropout(out_ffn)
-        )
-
-        return logits
+        return output
