@@ -23,7 +23,7 @@ import mlflow
 import mlflow.pytorch
 
 # Config
-with open("../config/base.yaml", "r") as f:
+with open(os.path.join(os.path.dirname(__file__), "config/base.yaml"), "r") as f:
     cfg = yaml.safe_load(f)
 
 device = torch.device(
@@ -47,7 +47,7 @@ raw_data = load_dataset(cfg["dataset"]["path"], cfg["dataset"]["name"])
 
 test_size  = cfg["dataset"]["test_size"]
 train_size = cfg["dataset"]["train_size"]
-dataset = Dataset_for_summerisation(tokenizer, raw_data[cfg["dataset"]["split"]].select(range()))
+dataset = Dataset_for_summerisation(tokenizer, raw_data[cfg["dataset"]["split"]].select(range(train_size)))
 test_dataset = Dataset_for_summerisation(tokenizer, raw_data[cfg["dataset"]["test_split"]].select(range(test_size)))
 
 data_loader = DataLoader(
@@ -121,7 +121,7 @@ n_epochs    = cfg["training"]["n_epochs"]
 clip        = cfg["training"]["clip"]
 accum_steps = cfg["training"]["gradient_accumulation_steps"]
 ckpt_freq   = cfg["training"]["checkpoint_freq"]
-eval_freq   = cfg["training"].get("eval_freq", 1)   # évaluer tous les N epochs
+eval_freq   = cfg["training"]["eval_freq"]   # évaluer tous les N epochs
 
 # MLflow 
 mlflow.set_tracking_uri("https://dagshub.com/Arsenicophe/transformer_for_summarition.mlflow")

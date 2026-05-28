@@ -21,7 +21,7 @@ def encodage_positionnel( d_model, positions) :
     
     pos_encoding = angle_rads[np.newaxis, ...]
     
-    return torch.from_numpy(pos_encoding, dtype=torch.float32)
+    return torch.from_numpy(pos_encoding).float()
 
 def preprossessing(data) :
     pass
@@ -51,12 +51,10 @@ def train_step(
         enc_mask = (batch["enc_mask"] == 0).to(device)   
  
         tgt      = batch["dec_input_ids"].to(device)
-        dec_mask = (batch["dec_mask"] == 0).to(device)
  
         # Teacher forcing : décalage d'un token
         tgt_dec    = tgt[:, :-1]        
         tgt_cible  = tgt[:, 1:]          
-        dec_mask   = dec_mask[:, :-1]
  
         seq_len = tgt_dec.size(1)
         causal_mask = torch.triu(
@@ -65,7 +63,7 @@ def train_step(
  
         # ── Forward (mixed precision) ─────────────────────────────────────────
         with torch.autocast(device_type=device.type, enabled=mixed_precision):
-            logits = model(src, tgt_dec, enc_mask, dec_mask, causal_mask)
+            logits = model(src, tgt_dec, enc_mask, causal_mask)
             loss   = criterion(
                 logits.reshape(-1, logits.size(-1)),
                 tgt_cible.reshape(-1)
@@ -142,7 +140,7 @@ def next_word(
     encoder_input,
     output,
     device,
-    max_length=128
+    max_length=521
 ):
 
     # Encoder
@@ -163,10 +161,6 @@ def next_word(
     # Decoder
     dec_input_ids = output.to(device)
 
-    dec_mask = (
-        dec_input_ids == tokenizer.pad_token_id
-    )
-
     # Causal mask
     seq_len = dec_input_ids.size(1)
 
@@ -184,7 +178,6 @@ def next_word(
         enc_input_ids,
         dec_input_ids,
         enc_mask,
-        dec_mask,
         causal_mask,
     )
 
@@ -288,11 +281,9 @@ def eval_step(
             enc_mask = (batch["enc_mask"] == 0).to(device)
  
             tgt      = batch["dec_input_ids"].to(device)
-            dec_mask = (batch["dec_mask"] == 0).to(device)
  
             tgt_dec   = tgt[:, :-1]
             tgt_cible = tgt[:, 1:]
-            dec_mask  = dec_mask[:, :-1]
  
             seq_len = tgt_dec.size(1)
             causal_mask = torch.triu(
@@ -301,7 +292,7 @@ def eval_step(
  
             # ── Forward (mixed precision) ─────────────────────────────────────
             with torch.autocast(device_type=device.type, enabled=mixed_precision):
-                logits = model(src, tgt_dec, enc_mask, dec_mask, causal_mask)
+                logits = model(src, tgt_dec, enc_mask, causal_mask)
                 loss   = criterion(
                     logits.reshape(-1, logits.size(-1)),
                     tgt_cible.reshape(-1),

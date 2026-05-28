@@ -3,4 +3,5 @@ data/
 *.pt
 *.arrow
 .DS_Store
-notebook/colab.ipynb
+notebook/colab.ipynb/
+notebook/inference.ipynb 

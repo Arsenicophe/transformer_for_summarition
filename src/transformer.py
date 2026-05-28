@@ -46,7 +46,6 @@ class Transformer(nn.Module):
         enc_idx,
         input_idx,
         enc_mask_padding,
-        dec_mask_padding,
         causal_mask,
     ):
         context = self.encoder(enc_idx, enc_mask_padding)

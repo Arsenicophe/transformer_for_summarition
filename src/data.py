@@ -16,7 +16,8 @@ class Dataset_for_summerisation(Dataset):
     
 
     def __getitem__(self, index):
-        src, tgt = self.data[index]
+        tgt = self.data[index]["summary"]
+        src =  self.data[index]["text"]
 
         enc = self.tokenizer(
 
@@ -53,7 +54,4 @@ class Dataset_for_summerisation(Dataset):
             "enc_mask": enc["attention_mask"].squeeze(0),
 
             "dec_input_ids": dec["input_ids"].squeeze(0),
-
-            "dec_mask": dec["attention_mask"].squeeze(0),
-
         }
