@@ -132,11 +132,7 @@ def summarize(model, tokenizer, input_document, device, max_len=128):
 
 def eval_step(model, data_loader, criterion, tokenizer, device,
               mixed_precision, num_samples_rouge=64):
-    """
-    - test_loss : cross-entropy sur tout le split (teacher forcing)
-    - ROUGE     : calculé sur num_samples_rouge exemples via génération réelle
-                  (autoregressive) pour avoir des scores représentatifs
-    """
+    
     model.eval()
     total_loss = 0.0
     r1_scores, r2_scores, rL_scores = [], [], []

@@ -25,9 +25,6 @@ class EncoderLayer(nn.Module):
 
     def forward(self, enc_input, mask_padding=None, need_weights=False):
 
-        # ── Pre-LayerNorm : normaliser AVANT le sous-module ──────────────────
-        # Post-LN (ancien) : x = LayerNorm(x + SubLayer(x))
-        # Pre-LN  (actuel) : x = x + SubLayer(LayerNorm(x))  ← plus stable
 
         normed = self.layernorm1(enc_input)
         attn_out, alpha = self.mha(

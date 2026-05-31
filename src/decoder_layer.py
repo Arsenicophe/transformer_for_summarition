@@ -32,7 +32,7 @@ class DecoderLayer(nn.Module):
 
     def forward(self, query, context, mask_padding=None, causal_mask=None):
 
-        # ── 1. Self-attention masquée (Pre-LN) ───────────────────────────────
+        
         normed = self.layernorm1(query)
         out1, _ = self.mha1(
             normed, normed, normed,
@@ -40,7 +40,7 @@ class DecoderLayer(nn.Module):
         )
         query = query + self.dropout(out1)
 
-        # ── 2. Cross-attention encodeur-décodeur (Pre-LN) ────────────────────
+        
         normed = self.layernorm2(query)
         out2, _ = self.mha2(
             normed, context, context,
@@ -48,7 +48,7 @@ class DecoderLayer(nn.Module):
         )
         query = query + self.dropout(out2)
 
-        # ── 3. Feed-forward (Pre-LN) ──────────────────────────────────────────
+        
         normed  = self.layernorm3(query)
         out_ffn = self.ffn(normed)
         output  = query + self.dropout(out_ffn)

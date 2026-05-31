@@ -182,4 +182,4 @@ with mlflow.start_run(run_name=f"run_epoch_{start_epoch}_to_{n_epochs}"):
             mlflow.log_artifact(ckpt_path)
 
     mlflow.pytorch.log_model(model, artifact_path="model")
-    print("\n✅ Entraînement terminé. Modèle logué dans MLflow.")
+    print("\n Entraînement terminé. Modèle logué dans MLflow.")
